@@ -2,7 +2,7 @@ import tornado.ioloop
 import tornado.web
 import dbFactory
 import redisFactory
-from listitemhandler_db import ListItemHandler as ListItemHandler
+from responsecachelistener import ListItemHandler as ListItemHandler
 
 def make_app():
     return tornado.web.Application(handlers = [

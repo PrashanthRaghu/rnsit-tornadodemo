@@ -15,37 +15,49 @@ class ListItemHandler(tornado.web.RequestHandler):
         s = self.session()
         itemId = self.get_argument(constants.ID_FIELD_NAME, constants.ID_FIELD_DEFAULT)
 
-        items = []
-        if itemId == "-1":
-            idList = self.redisConnection.lrange("item_ids", 0, -1)
+        url = self.request.uri
 
-            for iD in idList:
-                item = self.redisConnection.hgetall(iD)
+        response = self.redisConnection.get(url)
 
-                if item == {}:
-                    print "From DB"
+        if response == None:
+            items = []
+            if itemId == "-1":
+                idList = self.redisConnection.lrange("item_ids", 0, -1)
+
+                for iD in idList:
+                    item = self.redisConnection.hgetall(iD)
+
+                    if item == {}:
+                        print "From DB"
+                        item = s.query(TodoItem).filter_by(id = itemId).first()
+                        i = {constants.ID_FIELD_NAME: item.id, constants.ITEM_FIELD_NAME: item.item}
+                        self.redisConnection.hmset(item.id, i)
+                        item = i
+                    else:
+                        print "From Cache"
+
+                    items.append(item)
+
+                result = json.dumps(items)
+                self.redisConnection.setex(url, 30, result)
+                self.write(result)
+            else:
+                items = self.redisConnection.hgetall(itemId)
+
+                if items == {}:
+                    print "from DB"
                     item = s.query(TodoItem).filter_by(id = itemId).first()
                     i = {constants.ID_FIELD_NAME: item.id, constants.ITEM_FIELD_NAME: item.item}
                     self.redisConnection.hmset(item.id, i)
-                    item = i
+                    self.write(i)
+                    self.redisConnection.setex(url, 30, i)
                 else:
-                    print "From Cache"
-
-                items.append(item)
-
-            self.write(json.dumps(items))
+                    print "from cache"
+                    self.write(items)
+                    self.redisConnection.setex(url, 30, items)
         else:
-            items = self.redisConnection.hgetall(itemId)
-
-            if items == {}:
-                print "from DB"
-                item = s.query(TodoItem).filter_by(id = itemId).first()
-                i = {constants.ID_FIELD_NAME: item.id, constants.ITEM_FIELD_NAME: item.item}
-                self.redisConnection.hmset(item.id, i)
-                self.write(i)
-            else:
-                print "from cache"
-                self.write(items)
+            print "From url cache"
+            self.write(response)
         
 
     def post(self):
