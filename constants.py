@@ -1,0 +1,4 @@
+ID_FIELD_NAME = "id"
+ITEM_FIELD_NAME = "item"
+ID_FIELD_DEFAULT = "-1"
+ITEM_FIELD_DEFAULT = "Empty to-do"
