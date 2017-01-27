@@ -2,7 +2,8 @@ import tornado.ioloop
 import tornado.web
 import dbFactory
 import redisFactory
-from listitemhandler_redis import ListItemHandler as ListItemHandler
+from dbpoolrequestlistener import ListItemHandler as ListItemHandler
+import dbpool
 
 import sys
 def make_app():

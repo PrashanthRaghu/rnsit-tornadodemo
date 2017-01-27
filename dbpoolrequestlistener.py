@@ -7,11 +7,12 @@ import constants
 import json
 from dbFactory import TodoItem
 import dbpool
+import tornado.web as web
 
 class ListItemHandler(tornado.web.RequestHandler):
-    session = dbFactory.initDbSession()
     redisConnection = redisFactory.getRedisInstance()
 
+    @web.asynchronous
     def get(self):
         s = dbpool.pool.get_connection()
         itemId = self.get_argument(constants.ID_FIELD_NAME, constants.ID_FIELD_DEFAULT)
@@ -62,6 +63,7 @@ class ListItemHandler(tornado.web.RequestHandler):
         
         dbpool.pool.return_connection(s)
 
+    @web.asynchronous
     def post(self):
         s = dbpool.pool.get_connection()
         itemData = self.get_argument(constants.ITEM_FIELD_NAME, constants.ITEM_FIELD_DEFAULT)
@@ -78,9 +80,10 @@ class ListItemHandler(tornado.web.RequestHandler):
             self.write(i)
         else:
             self.write("-1")
+            self.set_status(404)
         dbpool.pool.return_connection(s)
 
-
+    @web.asynchronous
     def put(self):
         s = dbpool.pool.get_connection()
         itemData = self.get_argument(constants.ITEM_FIELD_NAME, constants.ITEM_FIELD_DEFAULT)
@@ -94,6 +97,7 @@ class ListItemHandler(tornado.web.RequestHandler):
         self.write(item)
         dbpool.pool.return_connection(s)
 
+    @web.asynchronous
     def delete(self):
         s = dbpool.pool.get_connection()
         itemId = self.get_argument(constants.ID_FIELD_NAME, constants.ID_FIELD_DEFAULT)
@@ -105,4 +109,7 @@ class ListItemHandler(tornado.web.RequestHandler):
             self.redisConnection.lrem("item_ids", 1, item.id)
             s.delete(item)
             self.write("1")
+        else:
+            self.set_status(404)
+            self.write("-1")
         dbpool.pool.return_connection(s)     
